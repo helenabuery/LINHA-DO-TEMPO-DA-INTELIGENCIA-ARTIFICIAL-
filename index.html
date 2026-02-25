@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jornada AI</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background-color 0.4s, color 0.4s, border-color 0.4s, font-size 0.2s ease-out;
+    }
+    
+    body.high-contrast { background: #0f172a !important; }
+    .high-contrast .app-wrapper { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important; }
+    .high-contrast .detail-card, .high-contrast .center-circle { background: #1e293b !important; border: 2px solid #8b5cf6 !important; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+    .high-contrast #main-title, .high-contrast .node-label, .high-contrast #detail-title, .high-contrast #detail-description, .high-contrast header p { color: #f1f5f9 !important; }
+    .high-contrast nav { background: rgba(15, 23, 42, 0.9) !important; border-bottom: 1px solid #334155; }
+
+    .brand-gradient { background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); }
+
+    .timeline-container { position: relative; width: 100%; height: 100%; min-height: 600px; }
+    .center-circle {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 140px; height: 140px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 8px rgba(255, 255, 255, 0.5);
+      z-index: 20; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .timeline-node {
+      position: absolute; width: 70px; height: 70px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10;
+    }
+    .node-label { position: absolute; white-space: nowrap; font-size: 13px; font-weight: 500; color: #374151; pointer-events: none; }
+    .detail-card {
+      position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%);
+      background: white; border-radius: 20px; padding: 24px 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12); max-width: 400px; width: 90%;
+      opacity: 0; visibility: hidden; transition: all 0.4s; z-index: 30;
+    }
+    .detail-card.visible { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-10px); }
+    .pulse-ring {
+      position: absolute; left: 50%; top: 50%; width: 140px; height: 140px;
+      border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 50%;
+      animation: pulse-ring 2s ease-out infinite; pointer-events: none;
+    }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .floating { animation: float 3s ease-in-out infinite; }
+    .gradient-orange { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); }
+    .gradient-purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); }
+    .gradient-pink { background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); }
+    .gradient-blue { background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); }
+    .gradient-teal { background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%); }
+    .gradient-amber { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+  </style>
+ </head>
+ <body class="h-full bg-gray-50 overflow-auto">
+  
+  <nav class="w-full bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 px-6 py-3 flex justify-between items-center gap-4">
+    <div class="text-[10px] font-bold text-purple-400 uppercase tracking-tighter hidden lg:block">
+        Jornada AI
+    </div>
+
+    <div class="relative flex-1 max-w-xs group">
+        <input type="text" id="search-input" placeholder="Buscar na jornada..." 
+               class="w-full pl-10 pr-4 py-2 rounded-full border-none text-sm text-white placeholder-white/80 focus:ring-2 focus:ring-purple-300 outline-none shadow-sm transition-all brand-gradient">
+        <div class="absolute left-3 top-2.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+        <div class="flex gap-1">
+            <button id="font-decrease" title="Diminuir fonte" class="brand-gradient w-9 h-9 flex items-center justify-center rounded-full text-white shadow-md hover:opacity-90 active:scale-90 transition-all font-bold text-sm">A-</button>
+            <button id="font-increase" title="Aumentar fonte" class="brand-gradient w-9 h-9 flex items-center justify-center rounded-full text-white shadow-md hover:opacity-90 active:scale-90 transition-all font-bold text-sm">A+</button>
+        </div>
+
+        <button id="contrast-toggle" class="brand-gradient flex items-center gap-2 px-4 py-2 h-9 rounded-full text-[10px] font-bold text-white shadow-md hover:opacity-90 active:scale-95 transition-all uppercase tracking-wider">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            </svg>
+            <span class="hidden sm:inline">Contraste</span>
+        </button>
+    </div>
+  </nav>
+
+  <div class="app-wrapper w-full h-full min-h-screen" style="background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);">
+   <header class="text-center pt-8 pb-4">
+    <p class="text-sm font-medium tracking-widest text-gray-800 uppercase mb-2">Linha do Tempo</p>
+    <h1 id="main-title" class="text-3xl md:text-4xl font-bold text-purple-500">História da AI</h1>
+   </header>
+
+   <div class="timeline-container max-w-4xl mx-auto px-4" id="timeline">
+    <svg class="absolute inset-0 w-full h-full" style="z-index: 1;" id="connections-svg">
+      <defs>
+        <lineargradient id="grad-orange" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#f97316;stop-opacity:0.8" /></lineargradient>
+        <lineargradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0.8" /></lineargradient>
+        <lineargradient id="grad-pink" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#ec4899;stop-opacity:0.8" /></lineargradient>
+        <lineargradient id="grad-blue" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.8" /></lineargradient>
+        <lineargradient id="grad-teal" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#14b8a6;stop-opacity:0.8" /></lineargradient>
+        <lineargradient id="grad-amber" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.3" /><stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0.8" /></lineargradient>
+      </defs> 
+      <g id="connection-lines"></g>
+    </svg>
+    <div class="pulse-ring"></div>
+    <div class="center-circle floating" id="center-circle">
+     <div class="text-center"><span id="center-year" class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">AI</span></div>
+    </div>
+    <div id="nodes-container"></div>
+    <div class="detail-card" id="detail-card">
+     <div class="flex items-start gap-4">
+      <div id="detail-icon" class="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"></div>
+      <div>
+       <h3 id="detail-title" class="text-lg font-bold text-gray-800 mb-1"></h3>
+       <p id="detail-month" class="text-sm font-medium text-purple-500 mb-2"></p>
+       <p id="detail-description" class="text-sm text-gray-600 leading-relaxed"></p>
+      </div>
+     </div>
+    </div>
+   </div>
+
+   <footer class="mt-12 pb-12 pt-10 border-t border-gray-200">
+    <div class="max-w-4xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+      
+      <div class="text-sm font-bold text-gray-700 uppercase tracking-tight">
+        © <span class="text-pink-500">2026</span> - <span class="text-pink-500">Jornada AI</span>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        <span class="text-[11px] font-bold text-white brand-gradient px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">Ana Helena</span>
+        <span class="text-[11px] font-bold text-white brand-gradient px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">Letícia França</span>
+        <span class="text-[11px] font-bold text-white brand-gradient px-4 py-1.5 rounded-full uppercase tracking-wider shadow-md">Jordana Moreira</span>
+      </div>
+
+      <a href="https://github.com" target="_blank" rel="noopener noreferrer" 
+         class="flex items-center gap-2 text-pink-500 hover:text-pink-600 transition-all transform hover:scale-105" title="Ver Repositório">
+        <span class="text-[10px] font-bold uppercase tracking-widest">GitHub</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
+          <path d="M9 18c-4.51 2-5-2-7-2"></path>
+        </svg>
+      </a>
+      
+    </div>
+   </footer>
+  </div>
+
+<script>
+    const timelineData = [
+      { id: 1, month: '1950', title: 'Alan Turing', description: 'Propõe que se uma máquina enganar um humano, possui inteligência.', icon: '1950', gradient: 'gradient-orange', gradientId: 'grad-orange' },
+      { id: 2, month: '1956', title: 'Termo "IA"', description: 'John McCarthy introduz oficialmente o termo pela primeira vez.', icon: '1956', gradient: 'gradient-purple', gradientId: 'grad-purple' },
+      { id: 3, month: '1966', title: 'ELIZA', description: 'Criação de um chatbot capaz de manter conversas básicas.', icon: '1966', gradient: 'gradient-pink', gradientId: 'grad-pink' },
+      { id: 4, month: '1997', title: 'Deep Blue', description: 'O computador de xadrez derrota o campeão mundial Garry Kasparov.', icon: '1997', gradient: 'gradient-blue', gradientId: 'grad-blue' },
+      { id: 5, month: '1999', title: 'Sony AIBO', description: 'Sony lança o primeiro cão robô de estimação inteligente.', icon: '1999', gradient: 'gradient-teal', gradientId: 'grad-teal' },
+      { id: 6, month: '2002', title: 'Roomba', description: 'O primeiro aspirador de pó robótico produzido em massa.', icon: '2002', gradient: 'gradient-amber', gradientId: 'grad-amber' },
+      { id: 7, month: '2011', title: 'Siri & Watson', description: 'Apple lança Siri e IBM Watson vence o Jeopardy.', icon: '2011', gradient: 'gradient-orange', gradientId: 'grad-orange' },
+      { id: 8, month: '2012', title: 'AlexNet', description: 'Rede neural vence competição de reconhecimento de imagens.', icon: '2012', gradient: 'gradient-purple', gradientId: 'grad-purple' },
+      { id: 9, month: '2014', title: 'Amazon Alexa', description: 'Lançamento da assistente virtual focada em voz.', icon: '2014', gradient: 'gradient-pink', gradientId: 'grad-pink' },
+      { id: 10, month: '2016', title: 'Alpha Go', description: 'IA derrotou o campeão mundial de Go (Google DeepMind).', icon: '2016', gradient: 'gradient-blue', gradientId: 'grad-blue' },
+      { id: 11, month: '2017', title: 'Transformer', description: 'Base para os modelos de linguagem atuais (LLMs).', icon: '2017', gradient: 'gradient-teal', gradientId: 'grad-teal' },
+      { id: 12, month: '2020', title: 'GPT-3', description: 'Ferramenta para geração de textos complexos.', icon: '2020', gradient: 'gradient-amber', gradientId: 'grad-amber' },
+      { id: 13, month: '2022', title: 'Chat GPT', description: 'Revolução da inteligência artificial generativa.', icon: '2022', gradient: 'gradient-purple', gradientId: 'grad-purple' },
+      { id: 14, month: '2024', title: 'IA Multimodal', description: 'IAs que veem, ouvem e executam tarefas complexas.', icon: '2024', gradient: 'gradient-pink', gradientId: 'grad-pink' }
+    ];
+
+    let activeNode = null;
+    let currentFontSize = 100;
+
+    const updateFontSize = () => {
+        document.documentElement.style.fontSize = `${currentFontSize}%`;
+        renderTimeline();
+    };
+
+    document.getElementById('font-increase').addEventListener('click', () => {
+        if (currentFontSize < 160) {
+            currentFontSize += 10;
+            updateFontSize();
+        }
+    });
+
+    document.getElementById('font-decrease').addEventListener('click', () => {
+        if (currentFontSize > 80) {
+            currentFontSize -= 10;
+            updateFontSize();
+        }
+    });
+
+    document.getElementById('contrast-toggle').addEventListener('click', () => {
+        document.body.classList.toggle('high-contrast');
+    });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const nodes = document.querySelectorAll('.timeline-node');
+        timelineData.forEach((item, index) => {
+            const matches = item.title.toLowerCase().includes(term) || 
+                          item.description.toLowerCase().includes(term) ||
+                          item.month.includes(term);
+            if (nodes[index]) {
+                nodes[index].style.opacity = matches ? "1" : "0.1";
+                nodes[index].style.pointerEvents = matches ? "auto" : "none";
+            }
+        });
+    });
+
+    function calculateNodePosition(angle, radius) {
+      const radians = (angle * Math.PI) / 180;
+      return { x: Math.cos(radians) * radius, y: Math.sin(radians) * radius };
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById('nodes-container');
+      const linesGroup = document.getElementById('connection-lines');
+      const timelineEl = document.getElementById('timeline');
+      if (!timelineEl) return;
+      
+      container.innerHTML = '';
+      linesGroup.innerHTML = '';
+      const rect = timelineEl.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      const radius = Math.min(rect.width, rect.height) * 0.38;
+      const angleStep = 360 / timelineData.length;
+      
+      timelineData.forEach((item, index) => {
+        const currentAngle = index * angleStep - 90;
+        const pos = calculateNodePosition(currentAngle, radius);
+        const nodeX = centerX + pos.x;
+        const nodeY = centerY + pos.y;
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', centerX); line.setAttribute('y1', centerY);
+        line.setAttribute('x2', nodeX); line.setAttribute('y2', nodeY);
+        line.setAttribute('stroke', `url(#${item.gradientId})`);
+        line.setAttribute('stroke-width', '2'); line.setAttribute('stroke-dasharray', '4 4');
+        linesGroup.appendChild(line);
+        
+        const node = document.createElement('div');
+        node.className = `timeline-node ${item.gradient}`;
+        node.style.left = `${nodeX - 35}px`; node.style.top = `${nodeY - 35}px`;
+        node.innerHTML = `<span style="color:white; font-weight:bold; font-size:1.1rem; letter-spacing:-1px;">${item.icon}</span>`;
+        
+        const label = document.createElement('span');
+        label.className = 'node-label';
+        label.textContent = item.title;
+        if (currentAngle > -90 && currentAngle <= 90) {
+          label.style.left = '75px'; label.style.textAlign = 'left';
+        } else {
+          label.style.right = '75px'; label.style.textAlign = 'right';
+        }
+        label.style.top = '50%'; label.style.transform = 'translateY(-50%)';
+        node.appendChild(label);
+        node.addEventListener('click', () => showDetail(item, node));
+        container.appendChild(node);
+      });
+    }
+
+    function showDetail(item, nodeElement) {
+      const card = document.getElementById('detail-card');
+      const icon = document.getElementById('detail-icon');
+      const title = document.getElementById('detail-title');
+      const month = document.getElementById('detail-month');
+      const description = document.getElementById('detail-description');
+      if (activeNode) activeNode.classList.remove('active');
+      activeNode = nodeElement;
+      nodeElement.classList.add('active');
+      icon.className = `w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${item.gradient}`;
+      icon.innerHTML = `<span style="color:white; font-weight:bold; font-size:0.8rem;">${item.icon}</span>`;
+      title.textContent = item.title;
+      month.textContent = item.month;
+      description.textContent = item.description;
+      card.classList.add('visible');
+    }
+
+    function hideDetail() {
+      const card = document.getElementById('detail-card');
+      card.classList.remove('visible');
+      if (activeNode) { activeNode.classList.remove('active'); activeNode = null; }
+    }
+
+    document.addEventListener('click', (e) => {
+      const isNode = e.target.closest('.timeline-node');
+      const isCard = e.target.closest('.detail-card');
+      if (!isNode && !isCard && !e.target.closest('nav')) hideDetail();
+    });
+
+    window.addEventListener('resize', () => {
+      clearTimeout(window.resizeTimeout);
+      window.resizeTimeout = setTimeout(renderTimeline, 100);
+    });
+
+    setTimeout(renderTimeline, 100);
+    </script>
+ </body>
+</html>
