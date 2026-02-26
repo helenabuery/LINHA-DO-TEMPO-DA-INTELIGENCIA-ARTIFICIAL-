@@ -39,4 +39,4 @@ https://www.ibm.com/br-pt/think/topics/history-of-artificial-intelligence
 ## Alunos participantes do trabalho: 
 ## Ana Helena Viana 
 ## Leticia Pereira Franca
-## Jordana Moreira Lopes 
+
